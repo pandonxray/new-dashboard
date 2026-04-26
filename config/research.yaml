@@ -1,0 +1,80 @@
+theme_order:
+  - 曲线结构
+  - 工艺/配方价差
+  - 外盘映射/进口平价
+  - 基差
+  - 利润
+
+source_order:
+  - wind
+  - wind_continue
+  - manual
+  - spot
+  - basis
+  - downstream
+
+favorites:
+  - PP_basis_east_china
+  - PL_basis_nea
+  - PL_basis_shandong
+  - Domestic_PDH_01
+  - FEI_PDH_01
+  - LPG_FEI_01_spread
+  - MTO_01
+  - PP01_L01_spread
+
+category_map:
+  PP-L:
+    display_category: PP月差
+    theme: 曲线结构
+    asset: PP
+    method: 跨品种月差
+    description: 聚焦 PP 与 L 的相对结构和跨品种强弱。
+  Domestic_PDH:
+    display_category: PDH国内配方
+    theme: 工艺/配方价差
+    asset: PDH
+    method: 国内配方
+    description: 使用 PP 与 LPG 的国内配方衡量 PDH 利润弹性。
+  FEI_PDH:
+    display_category: PDH进口到岸
+    theme: 工艺/配方价差
+    asset: PDH
+    method: 进口到岸
+    description: 将 FEI 成本映射到到岸口径，观察税率和汇率影响。
+  FEI-MOPJ:
+    display_category: FEI对标MOPJ
+    theme: 外盘映射/进口平价
+    asset: FEI
+    method: MOPJ映射
+    description: 观察 FEI 与 MOPJ 的映射关系和海外定价偏离。
+  FEI-MB:
+    display_category: FEI对标MB
+    theme: 外盘映射/进口平价
+    asset: FEI
+    method: MB映射
+    description: 跟踪 FEI 对 MB 的海外锚定强弱。
+  FEI-CP:
+    display_category: FEI对标CP
+    theme: 外盘映射/进口平价
+    asset: FEI
+    method: CP映射
+    description: 从 CP 口径观察 FEI 进口定价的变化。
+  LPG内外价差:
+    display_category: LPG进口平价
+    theme: 外盘映射/进口平价
+    asset: LPG
+    method: FEI进口平价
+    description: 将国内 LPG 与 FEI 到岸口径对照，跟踪内外盘价差。
+  MTO:
+    display_category: MTO利润
+    theme: 利润
+    asset: MTO
+    method: 甲醇制烯烃
+    description: 观察 MA 和 PP 的利润传导与工艺弹性。
+  基差:
+    display_category: 基差
+    theme: 基差
+    asset: 多品种
+    method: 现货-期货
+    description: 聚焦现货和期货的价差，并保留现货篮子和税率口径证据。

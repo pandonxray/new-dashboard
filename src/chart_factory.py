@@ -14,15 +14,25 @@ from .seasonal_engine import remove_feb29, seasonal_matrix, seasonal_stats
 
 
 SNAPSHOT_COLORS = {
-    "最新": "#e31a1c",
-    "三天前": "#e07a2f",
-    "一周前": "#a9a9a9",
-    "两周前": "#f2b701",
-    "一个月前": "#4673c7",
-    "两个月前": "#5fa54a",
-    "三个月前": "#255f95",
+    "最新": "#cf2e30",
+    "三天前": "#e6863b",
+    "一周前": "#d9913d",
+    "两周前": "#c8a443",
+    "一个月前": "#8b939c",
+    "两个月前": "#5f9f7a",
+    "三个月前": "#3d6f9f",
+    "六个月前": "#5f8f52",
+    "一年前": "#263b4a",
 }
-HISTORY_COLORS = ["#8fa7c9", "#9fb9b4", "#c8b98d", "#b9adc9", "#a7a7a7"]
+SNAPSHOT_DASHES = {
+    "最新": "solid",
+    "一周前": "solid",
+    "一个月前": "dash",
+    "三个月前": "dot",
+    "六个月前": "dashdot",
+    "一年前": "longdash",
+}
+HISTORY_COLORS = ["#476c9b", "#6f8f72", "#c48345", "#7e6a9f", "#5f8f9f", "#9f6b5f"]
 ASPECT_SIZES = {
     "PPT 16:9": (1280, 720),
     "Dashboard 宽屏": (1600, 900),
@@ -178,7 +188,7 @@ def build_seasonal_chart(
     if matrix.empty:
         return _placeholder_chart(chart_id, title, "数据缺失/季节性样本不足", aspect)
 
-    plot_index = pd.to_datetime("2001-" + matrix.index.astype(str))
+    plot_index = pd.to_datetime("2001-" + matrix.index.astype(str)).to_pydatetime().tolist()
     current_year = int(clean.index.max().year)
     fig = go.Figure()
     quantile_source = matrix.copy()
@@ -193,7 +203,7 @@ def build_seasonal_chart(
                 y=q90,
                 mode="lines",
                 fill="tonexty",
-                fillcolor="rgba(160, 160, 160, 0.12)",
+                fillcolor="rgba(105, 117, 130, 0.09)",
                 line=dict(width=0),
                 name="10%-90%",
                 hoverinfo="skip",
@@ -209,7 +219,7 @@ def build_seasonal_chart(
                 y=q75,
                 mode="lines",
                 fill="tonexty",
-                fillcolor="rgba(225, 26, 28, 0.08)",
+                fillcolor="rgba(207, 46, 48, 0.07)",
                 line=dict(width=0),
                 name="25%-75%",
                 hoverinfo="skip",
@@ -222,7 +232,7 @@ def build_seasonal_chart(
                 y=matrix.mean(axis=1),
                 mode="lines",
                 name="历史均值",
-                line=dict(color="#444444", width=2, dash="dash"),
+                line=dict(color="#2f3b46", width=2.4, dash="dash"),
             )
         )
 
@@ -237,8 +247,8 @@ def build_seasonal_chart(
                     y=values,
                     mode="lines+markers",
                     name=str(year_int),
-                    line=dict(color="#e31a1c", width=4),
-                    marker=dict(size=5),
+                    line=dict(color="#cf2e30", width=4.4),
+                    marker=dict(size=5.5, color="#cf2e30"),
                     connectgaps=False,
                 )
             )
@@ -249,8 +259,8 @@ def build_seasonal_chart(
                     y=values,
                     mode="lines",
                     name=str(year_int),
-                    line=dict(color=HISTORY_COLORS[history_index % len(HISTORY_COLORS)], width=1.8),
-                    opacity=0.42,
+                    line=dict(color=HISTORY_COLORS[history_index % len(HISTORY_COLORS)], width=2.45),
+                    opacity=0.78,
                     connectgaps=False,
                 )
             )
@@ -260,6 +270,7 @@ def build_seasonal_chart(
     latest_key = latest_date.strftime("%m-%d")
     latest_x = pd.to_datetime(f"2001-{latest_key}", errors="coerce")
     if latest_key in matrix.index and pd.notna(latest_x):
+        latest_x = latest_x.to_pydatetime()
         fig.add_trace(
             go.Scatter(
                 x=[latest_x],
@@ -268,7 +279,7 @@ def build_seasonal_chart(
                 text=["最新"],
                 textposition="top center",
                 name="最新点",
-                marker=dict(color="#e31a1c", size=11),
+                marker=dict(color="#cf2e30", size=12, line=dict(color="white", width=1.5)),
                 showlegend=False,
             )
         )
@@ -291,7 +302,32 @@ def _nearest_snapshot_date(index: pd.DatetimeIndex, target: pd.Timestamp) -> pd.
     return valid[0]
 
 
+def _rolling_month_tenors(reference_date: pd.Timestamp | None = None, count: int = 12) -> list[str]:
+    anchor = pd.Timestamp(reference_date or pd.Timestamp.today())
+    start_month = int(anchor.month)
+    return [f"{((start_month - 1 + offset) % 12) + 1:02d}" for offset in range(max(count, 1))]
+
+
+def _normalize_tenor(tenor: Any) -> str:
+    text = str(tenor).strip()
+    return text.zfill(2) if text.isdigit() and len(text) <= 2 else text
+
+
+def _resolve_tenor_order(
+    tenors: list[str],
+    tenor_mode: str | None = None,
+    tenor_count: int = 12,
+    reference_date: pd.Timestamp | None = None,
+) -> list[str]:
+    if tenor_mode in {"rolling_month", "current_month", "front_month"}:
+        return _rolling_month_tenors(pd.Timestamp.today(), count=tenor_count)
+    if tenor_mode == "data_latest_month":
+        return _rolling_month_tenors(reference_date, count=tenor_count)
+    return [_normalize_tenor(item) for item in tenors]
+
+
 def _column_for_tenor(prefix: str, tenor: str, columns: pd.Index) -> str | None:
+    tenor = _normalize_tenor(tenor)
     candidates = [
         f"{prefix}{tenor}",
         f"{prefix}_{tenor}",
@@ -319,6 +355,8 @@ def build_curve_snapshot_chart(
     chart_id: str = "curve_snapshot",
     aspect: str = "PPT 16:9",
     display_family: str | None = None,
+    tenor_mode: str | None = None,
+    tenor_count: int = 12,
 ) -> ChartArtifact:
     if frame is None or frame.empty:
         return _placeholder_chart(chart_id, title or curve_family, "数据缺失/未找到序列", aspect)
@@ -332,8 +370,9 @@ def build_curve_snapshot_chart(
         return _placeholder_chart(chart_id, title or curve_family, "数据缺失/未找到序列", aspect)
 
     family_label = display_family or curve_family
-    x_labels = [f"{family_label}{tenor}" for tenor in tenors]
-    columns = [_column_for_tenor(curve_family, tenor, data.columns) for tenor in tenors]
+    plot_tenors = _resolve_tenor_order(tenors, tenor_mode=tenor_mode, tenor_count=tenor_count, reference_date=latest_date)
+    x_labels = [f"{family_label}{tenor}" for tenor in plot_tenors]
+    columns = [_column_for_tenor(curve_family, tenor, data.columns) for tenor in plot_tenors]
     if not any(columns):
         return _placeholder_chart(chart_id, title or f"{family_label}期限结构", "数据缺失/未找到序列", aspect)
 
@@ -357,8 +396,9 @@ def build_curve_snapshot_chart(
                 y=y_values,
                 mode="lines+markers",
                 name=_snapshot_label(label, snap_date),
-                line=dict(color=SNAPSHOT_COLORS.get(label, "#777777"), width=4 if is_latest else 3),
-                marker=dict(size=8 if is_latest else 7),
+                line=dict(color=SNAPSHOT_COLORS.get(label, "#777777"), width=4.2 if is_latest else 2.7, dash=SNAPSHOT_DASHES.get(label, "solid")),
+                marker=dict(size=8 if is_latest else 6),
+                opacity=1 if is_latest else 0.82,
                 connectgaps=False,
             )
         )
@@ -375,7 +415,7 @@ def build_curve_snapshot_chart(
         chart_id=chart_id,
         title=chart_title,
         fig=fig,
-        meta={"latest_date": pd.Timestamp(latest_date).date().isoformat(), "snapshot_dates": manifest_dates},
+        meta={"latest_date": pd.Timestamp(latest_date).date().isoformat(), "snapshot_dates": manifest_dates, "tenor_order": plot_tenors},
         source_series=", ".join([str(col) for col in columns if col is not None]),
     )
 
@@ -389,19 +429,157 @@ def build_spread_structure_chart(
     chart_id: str = "spread_structure",
     aspect: str = "PPT 16:9",
     display_family: str | None = None,
+    tenor_mode: str | None = None,
+    tenor_count: int = 12,
 ) -> ChartArtifact:
-    artifact = build_curve_snapshot_chart(
-        curve_family=spread_family,
-        tenors=tenors,
-        snapshot_offsets=snapshot_offsets,
-        frame=frame,
-        title=title or f"{display_family or spread_family}价差结构",
-        chart_id=chart_id,
-        aspect=aspect,
-        display_family=display_family or spread_family.replace("_", "-"),
+    if frame is None or frame.empty:
+        return _placeholder_chart(chart_id, title or spread_family, "数据缺失/未找到序列", aspect)
+    data = frame.copy()
+    if not isinstance(data.index, pd.DatetimeIndex):
+        data.index = pd.to_datetime(data.index, errors="coerce")
+        data = data[data.index.notna()]
+    data = data.sort_index()
+    latest_date = data.dropna(how="all").index.max() if not data.dropna(how="all").empty else None
+    if latest_date is None or pd.isna(latest_date):
+        return _placeholder_chart(chart_id, title or spread_family, "数据缺失/未找到序列", aspect)
+
+    family_label = display_family or spread_family.replace("_", "-")
+    plot_tenors = _resolve_tenor_order(tenors, tenor_mode=tenor_mode, tenor_count=tenor_count, reference_date=latest_date)
+    columns = [_column_for_tenor(spread_family, tenor, data.columns) for tenor in plot_tenors]
+    if not any(columns):
+        return _placeholder_chart(chart_id, title or f"{family_label}价差结构", "数据缺失/未找到序列", aspect)
+
+    x_values = list(range(len(plot_tenors)))
+    x_labels = [f"M<br>{plot_tenors[0]}"] + [f"M+{idx}<br>{tenor}" for idx, tenor in enumerate(plot_tenors[1:], start=1)]
+    fig = go.Figure()
+    manifest_dates: list[str] = []
+    snapshot_rows: list[dict[str, Any]] = []
+
+    for offset in snapshot_offsets:
+        label = str(offset.get("label", ""))
+        days = int(offset.get("days", 0))
+        target = pd.Timestamp(latest_date) - pd.Timedelta(days=days)
+        snap_date = _nearest_snapshot_date(data.index, target)
+        if snap_date is None:
+            continue
+        row = data.loc[snap_date]
+        values = [float(row[col]) if col is not None and pd.notna(row.get(col, np.nan)) else None for col in columns]
+        if all(value is None for value in values):
+            continue
+        snapshot_rows.append({"label": label, "days": days, "date": snap_date, "values": values})
+        manifest_dates.append(pd.Timestamp(snap_date).date().isoformat())
+
+    if not snapshot_rows:
+        return _placeholder_chart(chart_id, title or f"{family_label}价差结构", "数据缺失/未找到序列", aspect)
+
+    for x0, x1, fill, label in [
+        (-0.5, 3.5, "rgba(207, 46, 48, 0.035)", "近端"),
+        (3.5, 7.5, "rgba(79, 111, 143, 0.035)", "中段"),
+        (7.5, len(x_values) - 0.5, "rgba(38, 59, 74, 0.035)", "远端"),
+    ]:
+        if x0 < len(x_values) - 0.5:
+            fig.add_vrect(x0=x0, x1=min(x1, len(x_values) - 0.5), fillcolor=fill, line_width=0, layer="below")
+            fig.add_annotation(
+                x=(x0 + min(x1, len(x_values) - 0.5)) / 2,
+                y=1.035,
+                xref="x",
+                yref="paper",
+                text=label,
+                showarrow=False,
+                font=dict(size=12, color="#7b8791"),
+            )
+
+    latest_row = next((row for row in snapshot_rows if row["days"] == 0), snapshot_rows[0])
+    context_rows = [row for row in snapshot_rows if row is not latest_row]
+    for row in reversed(context_rows):
+        label = row["label"]
+        fig.add_trace(
+            go.Scatter(
+                x=x_values,
+                y=row["values"],
+                mode="lines+markers",
+                name=_snapshot_label(label, row["date"]),
+                line=dict(color=SNAPSHOT_COLORS.get(label, "#777777"), width=2.35, dash=SNAPSHOT_DASHES.get(label, "solid")),
+                marker=dict(size=5.5, color=SNAPSHOT_COLORS.get(label, "#777777"), line=dict(width=0)),
+                opacity=0.74,
+                connectgaps=False,
+            )
+        )
+
+    fig.add_trace(
+        go.Scatter(
+            x=x_values,
+            y=latest_row["values"],
+            mode="lines",
+            name="最新结构填充",
+            line=dict(color="rgba(207, 46, 48, 0.1)", width=0),
+            fill="tozeroy",
+            fillcolor="rgba(207, 46, 48, 0.13)",
+            hoverinfo="skip",
+            showlegend=False,
+            connectgaps=False,
+        )
     )
-    artifact.fig.add_hline(y=0, line_width=1.5, line_dash="dash", line_color="#888888")
-    return artifact
+    fig.add_trace(
+        go.Scatter(
+            x=x_values,
+            y=latest_row["values"],
+            mode="lines+markers",
+            name=_snapshot_label(latest_row["label"], latest_row["date"]),
+            line=dict(color=SNAPSHOT_COLORS["最新"], width=4.8, dash="solid"),
+            marker=dict(size=9, color=SNAPSHOT_COLORS["最新"], line=dict(color="white", width=1.4)),
+            connectgaps=False,
+        )
+    )
+
+    latest_values = pd.Series(latest_row["values"], dtype="float64")
+    latest_values = latest_values.dropna()
+    if not latest_values.empty:
+        max_idx = int(latest_values.idxmax())
+        min_idx = int(latest_values.idxmin())
+        for idx, label, ay in [(max_idx, "最高", -32), (min_idx, "最低", 32)]:
+            y_val = float(latest_row["values"][idx])
+            fig.add_annotation(
+                x=idx,
+                y=y_val,
+                text=f"{label} {_format_number(y_val, 1)}",
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=0.8,
+                arrowwidth=1,
+                arrowcolor="#7b8791",
+                ax=0,
+                ay=ay,
+                bgcolor="rgba(255,255,255,0.88)",
+                bordercolor="#d9dee4",
+                borderwidth=1,
+                font=dict(size=12, color="#2f3b46"),
+            )
+
+    chart_title = title or f"{family_label}价差结构"
+    _apply_report_layout(fig, chart_title, aspect=aspect)
+    fig.add_hline(y=0, line_width=1.6, line_dash="dash", line_color="#6f7780")
+    fig.update_xaxes(
+        title_text="滚动月份结构",
+        tickmode="array",
+        tickvals=x_values,
+        ticktext=x_labels,
+        tickangle=0,
+        range=[-0.45, len(x_values) - 0.55],
+    )
+    fig.update_yaxes(title_text="价差", zeroline=False)
+    fig.update_layout(
+        margin=dict(l=70, r=42, t=88, b=112),
+        legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="center", x=0.5, traceorder="normal"),
+        hovermode="x unified",
+    )
+    return ChartArtifact(
+        chart_id=chart_id,
+        title=chart_title,
+        fig=fig,
+        meta={"latest_date": pd.Timestamp(latest_date).date().isoformat(), "snapshot_dates": manifest_dates, "tenor_order": plot_tenors},
+        source_series=", ".join([str(col) for col in columns if col is not None]),
+    )
 
 
 def build_state_matrix(metrics: Mapping[str, pd.Series], reference_date: pd.Timestamp | None = None) -> pd.DataFrame:

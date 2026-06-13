@@ -1,18 +1,16 @@
 snapshot_offsets:
   - label: 最新
     days: 0
-  - label: 三天前
-    days: 3
   - label: 一周前
     days: 7
-  - label: 两周前
-    days: 14
   - label: 一个月前
     days: 31
-  - label: 两个月前
-    days: 62
   - label: 三个月前
     days: 93
+  - label: 六个月前
+    days: 186
+  - label: 一年前
+    days: 365
 
 state_metrics:
   - id: fei
@@ -131,20 +129,26 @@ charts:
     title: FEI期限结构
     source: manual
     curve_family: FEI
-    tenors: ["09", "10", "11", "12", "01", "02", "03", "04", "05", "06", "07", "08"]
+    tenor_mode: rolling_month
+    tenor_count: 12
+    tenors: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
   cp_curve_snapshots:
     type: curve_snapshot
     title: CP期限结构
     source: manual
     curve_family: CP
-    tenors: ["09", "10", "11", "12", "01", "02", "03", "04", "05", "06", "07", "08"]
+    tenor_mode: rolling_month
+    tenor_count: 12
+    tenors: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
   mopj_curve_snapshots:
     type: curve_snapshot
     title: MOPJ期限结构
     source: manual
     curve_family: NAP
     display_family: MOPJ
-    tenors: ["09", "10", "11", "12", "01", "02", "03", "04", "05", "06", "07", "08"]
+    tenor_mode: rolling_month
+    tenor_count: 12
+    tenors: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
 
   fei_mopj_structure:
     type: spread_structure
@@ -152,28 +156,36 @@ charts:
     source: portfolios
     spread_family: FEI_MOPJ
     display_family: FEI-MOPJ
-    tenors: ["02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "01"]
+    tenor_mode: rolling_month
+    tenor_count: 12
+    tenors: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
   fei_cp_structure:
     type: spread_structure
     title: FEI-CP价差结构
     source: portfolios
     spread_family: FEI_CP
     display_family: FEI-CP
-    tenors: ["02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "01"]
+    tenor_mode: rolling_month
+    tenor_count: 12
+    tenors: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
   fei_brent_structure:
     type: spread_structure
     title: FEI-Brent价差结构
     source: portfolios
     spread_family: FEI_BRENT
     display_family: FEI-Brent
-    tenors: ["02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "01"]
+    tenor_mode: rolling_month
+    tenor_count: 12
+    tenors: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
   import_parity_structure:
     type: spread_structure
     title: 内外价差结构
     source: portfolios
     spread_family: LPG_FEI
     display_family: LPG-FEI
-    tenors: ["02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "01"]
+    tenor_mode: rolling_month
+    tenor_count: 12
+    tenors: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
 
 weekly:
   sections:

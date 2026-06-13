@@ -1,0 +1,203 @@
+snapshot_offsets:
+  - label: 最新
+    days: 0
+  - label: 三天前
+    days: 3
+  - label: 一周前
+    days: 7
+  - label: 两周前
+    days: 14
+  - label: 一个月前
+    days: 31
+  - label: 两个月前
+    days: 62
+  - label: 三个月前
+    days: 93
+
+state_metrics:
+  - id: fei
+    label: FEI
+    source: manual
+    candidates: [FEI01]
+  - id: cp
+    label: CP
+    source: manual
+    candidates: [CP01]
+  - id: mopj
+    label: MOPJ
+    source: manual
+    candidates: [MOPJ01, NAP01, MB01]
+  - id: brent
+    label: Brent
+    source: manual
+    candidates: [Brent, BRENT, Brent01]
+  - id: pp
+    label: PP
+    source: wind_continue
+    candidates: [PP_c, PP01]
+  - id: pg
+    label: PG
+    source: wind
+    candidates: [LPG01]
+  - id: fei_cp
+    label: FEI-CP
+    source: portfolios
+    candidates: [FEI_CP_01]
+  - id: fei_mopj
+    label: FEI-MOPJ
+    source: portfolios
+    candidates: [FEI_MOPJ_01]
+  - id: pdh_margin
+    label: PDH利润
+    source: portfolios
+    candidates: [FEI_PDH_01, Domestic_PDH_01]
+  - id: downstream_profit
+    label: 下游综合利润
+    source: downstream
+    candidates: [下游综合利润]
+  - id: port_inventory
+    label: 港口库存
+    source: manual
+    candidates: [港口库存, 华东港口库存, 丙烯港口库存]
+  - id: kpler_arrival
+    label: Kpler到货
+    source: manual
+    candidates: [Kpler到货, Kpler Arrival, arrival]
+
+charts:
+  fei_seasonal:
+    type: seasonal
+    title: FEI季节性
+    source: manual
+    candidates: [FEI01]
+  cp_seasonal:
+    type: seasonal
+    title: CP季节性
+    source: manual
+    candidates: [CP01]
+  mopj_seasonal:
+    type: seasonal
+    title: MOPJ季节性
+    source: manual
+    candidates: [MOPJ01, NAP01, MB01]
+  brent_seasonal:
+    type: seasonal
+    title: Brent季节性
+    source: manual
+    candidates: [Brent, BRENT, Brent01]
+  pdh_margin_seasonal:
+    type: seasonal
+    title: PDH利润季节性
+    source: portfolios
+    candidates: [FEI_PDH_01, Domestic_PDH_01]
+  downstream_profit_seasonal:
+    type: seasonal
+    title: 下游综合利润季节性
+    source: downstream
+    candidates: [下游综合利润]
+  pp_propylene_margin:
+    type: seasonal
+    title: PP-丙烯利润季节性
+    source: downstream
+    candidates: [粉料利润, PP-丙烯利润, 软泡聚醚-PO价差]
+  po_margin_seasonal:
+    type: seasonal
+    title: PO利润季节性
+    source: downstream
+    candidates: [PO利润-氯醇法, HPPO利润]
+  acrylonitrile_margin_seasonal:
+    type: seasonal
+    title: 丙烯腈利润季节性
+    source: downstream
+    candidates: [丙烯腈利润]
+  port_inventory_seasonal:
+    type: seasonal
+    title: 港口库存季节性
+    source: manual
+    candidates: [港口库存, 华东港口库存, 丙烯港口库存]
+  kpler_arrival_seasonal:
+    type: seasonal
+    title: Kpler到货季节性
+    source: manual
+    candidates: [Kpler到货, Kpler Arrival, arrival]
+  kpler_departure_seasonal:
+    type: seasonal
+    title: Kpler发货季节性
+    source: manual
+    candidates: [Kpler发货, Kpler Departure, departure]
+
+  fei_curve_snapshots:
+    type: curve_snapshot
+    title: FEI期限结构
+    source: manual
+    curve_family: FEI
+    tenors: ["09", "10", "11", "12", "01", "02", "03", "04", "05", "06", "07", "08"]
+  cp_curve_snapshots:
+    type: curve_snapshot
+    title: CP期限结构
+    source: manual
+    curve_family: CP
+    tenors: ["09", "10", "11", "12", "01", "02", "03", "04", "05", "06", "07", "08"]
+  mopj_curve_snapshots:
+    type: curve_snapshot
+    title: MOPJ期限结构
+    source: manual
+    curve_family: NAP
+    display_family: MOPJ
+    tenors: ["09", "10", "11", "12", "01", "02", "03", "04", "05", "06", "07", "08"]
+
+  fei_mopj_structure:
+    type: spread_structure
+    title: FEI-MOPJ价差结构
+    source: portfolios
+    spread_family: FEI_MOPJ
+    display_family: FEI-MOPJ
+    tenors: ["02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "01"]
+  fei_cp_structure:
+    type: spread_structure
+    title: FEI-CP价差结构
+    source: portfolios
+    spread_family: FEI_CP
+    display_family: FEI-CP
+    tenors: ["02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "01"]
+  fei_brent_structure:
+    type: spread_structure
+    title: FEI-Brent价差结构
+    source: portfolios
+    spread_family: FEI_BRENT
+    display_family: FEI-Brent
+    tenors: ["02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "01"]
+  import_parity_structure:
+    type: spread_structure
+    title: 内外价差结构
+    source: portfolios
+    spread_family: LPG_FEI
+    display_family: LPG-FEI
+    tenors: ["02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "01"]
+
+weekly:
+  sections:
+    - id: price_seasonality
+      title: 价格季节性
+      charts: [fei_seasonal, cp_seasonal, mopj_seasonal, brent_seasonal]
+    - id: forward_curves
+      title: 期限结构
+      charts: [fei_curve_snapshots, cp_curve_snapshots, mopj_curve_snapshots]
+    - id: spread_structure
+      title: 价差结构
+      charts: [fei_mopj_structure, fei_cp_structure, import_parity_structure]
+    - id: margins
+      title: 利润与估值
+      charts: [pdh_margin_seasonal, downstream_profit_seasonal, pp_propylene_margin, po_margin_seasonal, acrylonitrile_margin_seasonal]
+    - id: supply_inventory
+      title: 供应、库存与到货
+      charts: [kpler_arrival_seasonal, kpler_departure_seasonal, port_inventory_seasonal]
+
+daily:
+  sections:
+    - id: key_curves
+      title: 核心结构快照
+      charts: [fei_curve_snapshots, mopj_curve_snapshots, fei_mopj_structure, fei_cp_structure, pdh_margin_seasonal]
+    - id: seasonal_deviation
+      title: 季节性偏离
+      charts: [fei_seasonal, pdh_margin_seasonal, downstream_profit_seasonal]

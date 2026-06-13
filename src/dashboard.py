@@ -32,6 +32,7 @@ try:
     from .excel_refresh import refresh_excel_workbook
     from .industry_engine import build_propylene_profit_dashboard
     from .portfolio_engine import build_portfolios
+    from .report_pages import render_report_page
     from .risk_engine import build_risk_report, percentile_of_value, var_es_over_window, zscore_of_value
     from .seasonal_engine import remove_feb29, seasonal_matrix, seasonal_stats
     from .utils import load_yaml, setup_logging
@@ -48,6 +49,7 @@ except ImportError:
     from src.excel_refresh import refresh_excel_workbook
     from src.industry_engine import build_propylene_profit_dashboard
     from src.portfolio_engine import build_portfolios
+    from src.report_pages import render_report_page
     from src.risk_engine import build_risk_report, percentile_of_value, var_es_over_window, zscore_of_value
     from src.seasonal_engine import remove_feb29, seasonal_matrix, seasonal_stats
     from src.utils import load_yaml, setup_logging
@@ -60,6 +62,7 @@ else:
 
 APP_CONFIG = load_yaml(BASE_DIR / "config" / "app.yaml")
 METRIC_CONFIG = load_yaml(BASE_DIR / "config" / "metric.yaml")
+REPORT_CONFIG = load_yaml(BASE_DIR / "config" / "report_charts.yaml")
 setup_logging(APP_CONFIG.get("logging", {}).get("level", "INFO"), APP_CONFIG.get("logging", {}).get("file"))
 logger = logging.getLogger(__name__)
 
@@ -412,6 +415,20 @@ def _inject_theme() -> None:
         }
         .formula-box strong {
             color: var(--accent);
+        }
+        .report-meta-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin: -0.15rem 0 1rem 0;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+        .report-meta-strip span {
+            border: 1px solid rgba(88, 103, 122, 0.12);
+            background: rgba(255, 255, 255, 0.58);
+            border-radius: 8px;
+            padding: 0.28rem 0.5rem;
         }
         .stTabs [data-baseweb="tab-list"] {
             gap: 0.45rem;
@@ -2041,7 +2058,14 @@ def run_dashboard_app() -> None:
         .sort_index()
     )
 
-    market_tab, downstream_tab, data_tab = st.tabs(["市场序列", "下游利润", "数据预览"])
+    def _refresh_for_report() -> bool:
+        ok = refresh_excel_workbook(workbook, APP_CONFIG["excel"].get("refresh_timeout_sec", 180))
+        load_all_data.clear()
+        return ok
+
+    market_tab, downstream_tab, weekly_report_tab, daily_report_tab, data_tab = st.tabs(
+        ["市场序列", "下游利润", "周报出图", "日报出图", "数据预览"]
+    )
 
     with market_tab:
         source_key, title, series, formula, combo_frame, coverage, note, driver_strategy_row = _build_analysis_target(
@@ -2059,6 +2083,30 @@ def run_dashboard_app() -> None:
 
     with downstream_tab:
         _render_downstream_board(sources["downstream"], downstream_meta)
+
+    with weekly_report_tab:
+        render_report_page(
+            "weekly",
+            workbook_path,
+            sources,
+            portfolios,
+            basis_formula_df,
+            merged_for_formula,
+            REPORT_CONFIG,
+            _refresh_for_report,
+        )
+
+    with daily_report_tab:
+        render_report_page(
+            "daily",
+            workbook_path,
+            sources,
+            portfolios,
+            basis_formula_df,
+            merged_for_formula,
+            REPORT_CONFIG,
+            _refresh_for_report,
+        )
 
     with data_tab:
         _render_data_preview(sources, portfolios, downstream_meta, basis_meta, basis_formula_df)

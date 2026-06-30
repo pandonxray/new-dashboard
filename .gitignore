@@ -9,3 +9,6 @@ outputs/
 *.pyc
 *.pyo
 *.pyd
+data/raw/*.xlsx
+data/processed/*.parquet
+data/processed/*.pkl

@@ -5,10 +5,14 @@ import math
 import re
 from typing import Any
 
-import numexpr as ne
 import pandas as pd
 
 from .formula_engine import evaluate_formula
+
+try:
+    import numexpr as ne
+except Exception:  # pragma: no cover - depends on local binary wheels
+    ne = None
 
 _SIMPLE_FORMULA = re.compile(r"^\s*(?P<lhs>[A-Za-z_][A-Za-z0-9_]*)\s*-\s*(?P<rhs>.+?)\s*$")
 _TOKEN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
@@ -38,7 +42,10 @@ def _normalize_expr(expr: str) -> str:
 
 
 def _evaluate_scalar_expr(expr: str, context: dict[str, float]) -> float:
-    values = ne.evaluate(_normalize_expr(expr), local_dict=context)
+    if ne is not None:
+        values = ne.evaluate(_normalize_expr(expr), local_dict=context)
+    else:
+        values = pd.eval(_normalize_expr(expr), local_dict=context, engine="python")
     if hasattr(values, "item"):
         return float(values.item())
     return float(values)

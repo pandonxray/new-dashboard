@@ -3,8 +3,12 @@ from __future__ import annotations
 import logging
 import re
 
-import numexpr as ne
 import pandas as pd
+
+try:
+    import numexpr as ne
+except Exception:  # pragma: no cover - depends on local binary wheels
+    ne = None
 
 logger = logging.getLogger(__name__)
 _TOKEN = re.compile(r"[\u4e00-\u9fffA-Za-z_][\u4e00-\u9fffA-Za-z0-9_\/]*")
@@ -31,7 +35,10 @@ def evaluate_formula(df: pd.DataFrame, formula: str) -> pd.Series:
             context[name] = df[name]
 
     try:
-        values = ne.evaluate(formula, local_dict=context)
+        if ne is not None:
+            values = ne.evaluate(formula, local_dict=context)
+        else:
+            values = pd.eval(formula, local_dict=context, engine="python")
         return pd.Series(values, index=df.index, name=formula)
     except Exception as exc:
         logger.exception("Formula evaluation failed: %s", exc)

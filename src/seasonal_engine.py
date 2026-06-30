@@ -68,3 +68,59 @@ def seasonal_stats(series: pd.Series, years: int = 5) -> dict[str, float]:
     percentile = float((row <= current).mean() * 100)
     deviation = float(current - row.mean())
     return {"seasonal_percentile": percentile, "seasonal_deviation": deviation}
+
+
+def seasonal_percentile_band(
+    series: pd.Series,
+    years: int = 10,
+    lower: float = 10,
+    upper: float = 90,
+    interpolate: bool = True,
+) -> pd.DataFrame:
+    matrix = seasonal_matrix(series, years=years, interpolate=interpolate)
+    if matrix.empty:
+        return pd.DataFrame(columns=["doy", "lower", "median", "upper"])
+    band = pd.DataFrame(
+        {
+            "doy": matrix.index,
+            "lower": matrix.quantile(lower / 100.0, axis=1),
+            "median": matrix.median(axis=1),
+            "upper": matrix.quantile(upper / 100.0, axis=1),
+        }
+    )
+    return band.reset_index(drop=True)
+
+
+def monthly_box_frame(series: pd.Series, years: int = 10) -> pd.DataFrame:
+    s = _ensure_datetime_index(series.dropna())
+    if s.empty:
+        return pd.DataFrame(columns=["date", "year", "month", "value"])
+    cutoff_year = s.index.max().year - years + 1
+    s = s[s.index.year >= cutoff_year]
+    return pd.DataFrame(
+        {
+            "date": s.index,
+            "year": s.index.year,
+            "month": s.index.month,
+            "value": s.values,
+        }
+    )
+
+
+def calendar_heatmap_frame(series: pd.Series, year: int | None = None) -> pd.DataFrame:
+    s = _ensure_datetime_index(series.dropna())
+    if s.empty:
+        return pd.DataFrame(columns=["date", "week", "weekday", "value"])
+    selected_year = int(year or s.index.max().year)
+    s = s[s.index.year == selected_year]
+    if s.empty:
+        return pd.DataFrame(columns=["date", "week", "weekday", "value"])
+    iso = s.index.isocalendar()
+    return pd.DataFrame(
+        {
+            "date": s.index,
+            "week": iso.week.astype(int).to_numpy(),
+            "weekday": s.index.weekday,
+            "value": s.values,
+        }
+    )

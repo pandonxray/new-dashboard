@@ -822,6 +822,28 @@ def _series_groups(source_key: str, columns: list[str], downstream_meta: pd.Data
                 grouped["其他"].append(column)
         return {group: sorted(items) for group, items in grouped.items() if items}
 
+    if source_key == "manual":
+        rules = [
+            ("丙烷现货与区域", ["AFEI", "MB Spot"]),
+            ("丙烷运费/套利成本", ["USGC terminal", "Ras Tanura-Chiba", "Houston-Chiba"]),
+            ("石脑油现货与贴水", ["Naphtha MOPJ strip", "Naphtha C+F Japan"]),
+            ("丙烷纸货曲线", ["FEI", "CP", "MB"]),
+            ("石脑油纸货曲线", ["NAP", "MOPJ"]),
+            ("外盘丙烯", ["ICIS"]),
+        ]
+        grouped: dict[str, list[str]] = {name: [] for name, _ in rules}
+        grouped["其他"] = []
+        for column in columns:
+            placed = False
+            for group, keywords in rules:
+                if any(keyword in column for keyword in keywords):
+                    grouped[group].append(column)
+                    placed = True
+                    break
+            if not placed:
+                grouped["其他"].append(column)
+        return {group: sorted(items) for group, items in grouped.items() if items}
+
     grouped: dict[str, list[str]] = {}
     for col in columns:
         match = re.match(r"([A-Za-z]+)", col)

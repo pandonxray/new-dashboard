@@ -1,16 +1,14 @@
 snapshot_offsets:
   - label: 最新
     days: 0
+  - label: 3个有价日前
+    observations: 3
   - label: 一周前
     days: 7
   - label: 一个月前
     days: 31
   - label: 三个月前
     days: 93
-  - label: 六个月前
-    days: 186
-  - label: 一年前
-    days: 365
 
 state_metrics:
   - id: fei
@@ -61,6 +59,42 @@ state_metrics:
     label: Kpler到货
     source: manual
     candidates: [Kpler到货, Kpler Arrival, arrival]
+  - id: afei
+    label: AFEI
+    source: manual
+    candidates: [AFEI]
+  - id: afei_propane_m1_diff
+    label: AFEI-M1差
+    source: manual
+    candidates: [AFEI differ to Propane M1]
+  - id: mb_spot
+    label: MB Spot
+    source: manual
+    candidates: [MB Spot]
+  - id: usgc_terminal
+    label: USGC terminal
+    source: manual
+    candidates: ["USGC terminal\n（美湾码头费）"]
+  - id: ras_tanura_chiba
+    label: Ras Tanura-Chiba
+    source: manual
+    candidates: ["Ras Tanura-Chiba\n（中东-远东）"]
+  - id: houston_chiba
+    label: Houston-Chiba
+    source: manual
+    candidates: ["Houston-Chiba\n（美湾-远东）"]
+  - id: naphtha_strip
+    label: Naphtha MOPJ strip 45-75D
+    source: manual
+    candidates: [Naphtha MOPJ strip 45-75 Days]
+  - id: naphtha_premium_discount
+    label: Naphtha CFR Japan P/D
+    source: manual
+    candidates: [Naphtha C+F Japan Premium/Discount]
+  - id: naphtha_cfr_japan_cargo
+    label: Naphtha CFR Japan Cargo
+    source: manual
+    candidates: [Naphtha C+F Japan Cargo $/mt (NextGen MOC)]
 
 charts:
   fei_seasonal:
@@ -123,6 +157,95 @@ charts:
     title: Kpler发货季节性
     source: manual
     candidates: [Kpler发货, Kpler Departure, departure]
+
+  pdh_margin_mplus_seasonal:
+    type: seasonal
+    title: PDH利润动态近月季节性
+    title_template: "PDH利润 {month_label}（{tenor}月）季节性"
+    source: portfolios
+    dynamic_tenor:
+      offset: 1
+      avoid: ["01", "05", "09"]
+      fallback_offset: 2
+    candidate_templates: ["FEI_PDH_{tenor}", "Domestic_PDH_{tenor}"]
+  pdh_margin_01_seasonal:
+    type: seasonal
+    title: PDH利润 01月季节性
+    source: portfolios
+    candidates: [FEI_PDH_01, Domestic_PDH_01]
+  pdh_margin_05_seasonal:
+    type: seasonal
+    title: PDH利润 05月季节性
+    source: portfolios
+    candidates: [FEI_PDH_05, Domestic_PDH_05]
+  pdh_margin_09_seasonal:
+    type: seasonal
+    title: PDH利润 09月季节性
+    source: portfolios
+    candidates: [FEI_PDH_09, Domestic_PDH_09]
+
+  afei_seasonal:
+    type: seasonal
+    title: AFEI季节性
+    source: manual
+    candidates: [AFEI]
+  afei_propane_m1_diff_seasonal:
+    type: seasonal
+    title: AFEI differ to Propane M1季节性
+    source: manual
+    candidates: [AFEI differ to Propane M1]
+  fei_m1_m2_spread_seasonal:
+    type: seasonal_spread
+    title: FEI M+1-M+2月差季节性
+    title_template: "FEI {left_month_label}-{right_month_label}月差（{left}-{right}）季节性"
+    left:
+      source: manual
+      family: FEI
+      tenor_offset: 1
+    right:
+      source: manual
+      family: FEI
+      tenor_offset: 2
+  usgc_terminal_seasonal:
+    type: seasonal
+    title: USGC terminal（美湾码头费）季节性
+    source: manual
+    candidates: ["USGC terminal\n（美湾码头费）"]
+  ras_tanura_chiba_seasonal:
+    type: seasonal
+    title: Ras Tanura-Chiba（中东-远东）季节性
+    source: manual
+    candidates: ["Ras Tanura-Chiba\n（中东-远东）"]
+  houston_chiba_seasonal:
+    type: seasonal
+    title: Houston-Chiba（美湾-远东）季节性
+    source: manual
+    candidates: ["Houston-Chiba\n（美湾-远东）"]
+
+  naphtha_mopj_strip_45_75_seasonal:
+    type: seasonal
+    title: Naphtha MOPJ strip 45-75 Days季节性
+    source: manual
+    candidates: [Naphtha MOPJ strip 45-75 Days]
+  naphtha_cfr_japan_pd_seasonal:
+    type: seasonal
+    title: Naphtha C+F Japan Premium/Discount季节性
+    source: manual
+    candidates: [Naphtha C+F Japan Premium/Discount]
+  naphtha_cfr_japan_cargo_seasonal:
+    type: seasonal
+    title: Naphtha C+F Japan Cargo季节性
+    source: manual
+    candidates: [Naphtha C+F Japan Cargo $/mt (NextGen MOC)]
+  afei_naphtha_cargo_spread_seasonal:
+    type: seasonal_spread
+    title: AFEI-Naphtha C+F Japan Cargo季节性
+    left:
+      source: manual
+      candidates: [AFEI]
+    right:
+      source: manual
+      candidates: [Naphtha C+F Japan Cargo $/mt (NextGen MOC)]
 
   fei_curve_snapshots:
     type: curve_snapshot
@@ -189,21 +312,30 @@ charts:
 
 weekly:
   sections:
-    - id: price_seasonality
-      title: 价格季节性
-      charts: [fei_seasonal, cp_seasonal, mopj_seasonal, brent_seasonal]
-    - id: forward_curves
-      title: 期限结构
-      charts: [fei_curve_snapshots, cp_curve_snapshots, mopj_curve_snapshots]
-    - id: spread_structure
-      title: 价差结构
-      charts: [fei_mopj_structure, fei_cp_structure, import_parity_structure]
-    - id: margins
-      title: 利润与估值
-      charts: [pdh_margin_seasonal, downstream_profit_seasonal, pp_propylene_margin, po_margin_seasonal, acrylonitrile_margin_seasonal]
-    - id: supply_inventory
-      title: 供应、库存与到货
-      charts: [kpler_arrival_seasonal, kpler_departure_seasonal, port_inventory_seasonal]
+    - id: pdh
+      title: PDH板块
+      description: PP销售端减丙烷进口成本端，近端观察M+1窗口，1/5/9观察主力合约窗口。
+      charts: [pdh_margin_mplus_seasonal, pdh_margin_01_seasonal, pdh_margin_05_seasonal, pdh_margin_09_seasonal]
+    - id: propane_price_spread
+      title: 丙烷价格与月差
+      description: 现货评估、现货-纸货差和FEI近月月差共同描述丙烷近端定价状态。
+      charts: [afei_seasonal, afei_propane_m1_diff_seasonal, fei_m1_m2_spread_seasonal]
+    - id: propane_freight_region
+      title: 丙烷区域与运费
+      description: 美湾码头费和中东/美湾到远东航线成本用于把离岸资源转换为远东到岸经济性。
+      charts: [usgc_terminal_seasonal, ras_tanura_chiba_seasonal, houston_chiba_seasonal]
+    - id: propane_structure
+      title: 丙烷期限与价差结构
+      description: FEI、CP期限结构展示丙烷远期曲线，FEI-MOPJ展示丙烷相对石脑油结构。
+      charts: [fei_curve_snapshots, cp_curve_snapshots, fei_mopj_structure]
+    - id: naphtha_spot
+      title: NAP现货与贴水
+      description: MOPJ strip、CFR Japan贴水和CFR Japan cargo共同描述亚洲石脑油现货到岸价格。
+      charts: [naphtha_mopj_strip_45_75_seasonal, naphtha_cfr_japan_pd_seasonal, naphtha_cfr_japan_cargo_seasonal]
+    - id: naphtha_structure
+      title: NAP结构与替代价差
+      description: MOPJ期限结构观察石脑油曲线，AFEI-Naphtha Cargo观察轻烃相对石脑油替代价差。
+      charts: [mopj_curve_snapshots, afei_naphtha_cargo_spread_seasonal]
 
 daily:
   sections:
